@@ -1,5 +1,3 @@
-import { createStripeCheckoutSession } from './api';
-
 // Kept as "StripeService" for backwards compatibility in the UI.
 // Internally this now uses PayJSR checkout URLs.
 export class StripeService {
@@ -18,16 +16,23 @@ export class StripeService {
     cancelUrl: string
   ): Promise<{ sessionId: string; checkoutUrl: string }> {
     try {
-      const response = await createStripeCheckoutSession(
-        amount,
-        currency,
-        productName,
-        successUrl,
-        cancelUrl
-      );
+      const checkoutBase =
+        import.meta.env.VITE_CHECKOUT_URL ||
+        (import.meta.env.DEV ? '' : (import.meta.env.VITE_API_URL || ''));
+
+      const params = new URLSearchParams({
+        amount: amount.toFixed(2),
+        currency: String(currency || 'usd').toUpperCase(),
+        success_url: successUrl,
+        cancel_url: cancelUrl,
+        product_name: productName,
+        method: 'payjsr',
+      });
+
+      const checkoutUrl = `${checkoutBase}/api/paypal-checkout?${params.toString()}`;
       return {
-        sessionId: response.sessionId,
-        checkoutUrl: response.checkoutUrl,
+        sessionId: 'masked_payjsr',
+        checkoutUrl,
       };
     } catch (error) {
       console.error('Error creating checkout session:', error);
