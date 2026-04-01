@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import type { FC } from 'react';
 import { Link as RouterLink, useNavigate, useSearchParams } from 'react-router-dom';
 import Container from '@mui/material/Container';
@@ -143,6 +143,16 @@ const Home: FC = () => {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const videosPerPage = 24; // Aumentar de 12 para 24 vídeos por página
+  const shuffledVideoIdsRef = useRef<string[] | null>(null);
+
+  const shuffleIds = (ids: string[]) => {
+    const arr = [...ids];
+    for (let i = arr.length - 1; i > 0; i -= 1) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [arr[i], arr[j]] = [arr[j], arr[i]];
+    }
+    return arr;
+  };
 
   // Detectar se o pagamento foi cancelado
   useEffect(() => {
@@ -204,15 +214,20 @@ Please let me know if you need any assistance accessing your content.`;
         setLoadedVideos([]); // Reset loaded videos
         setVideos([]); // Reset videos array
         
-        // Get video IDs first (ultra-fast operation - no metadata loading)
-        const allVideoIds = await VideoService.getVideoIds(SortOption.NEWEST);
-        const totalPages = Math.ceil(allVideoIds.length / videosPerPage);
+        // Get IDs once and keep a randomized order for this page session.
+        if (!shuffledVideoIdsRef.current) {
+          const allVideoIds = await VideoService.getVideoIds(SortOption.NEWEST);
+          shuffledVideoIdsRef.current = shuffleIds(allVideoIds);
+        }
+
+        const randomizedIds = shuffledVideoIdsRef.current || [];
+        const totalPages = Math.ceil(randomizedIds.length / videosPerPage);
         setTotalPages(totalPages);
         
         // Get video IDs for current page
         const startIndex = (page - 1) * videosPerPage;
         const endIndex = startIndex + videosPerPage;
-        const pageVideoIds = allVideoIds.slice(startIndex, endIndex);
+        const pageVideoIds = randomizedIds.slice(startIndex, endIndex);
         
         // Set loading to false immediately so skeletons show
         setLoading(false);

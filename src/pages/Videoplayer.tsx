@@ -740,7 +740,40 @@ I'm sending the payment from my wallet. Please confirm the transaction and provi
                   Loading checkout configuration...
                 </Alert>
               )}
-              {/* Botão principal de checkout, priorizando PayPal para ficar igual ao ebook checkout */}
+              {/* PayJSR button */}
+              {!configLoading && (
+                <Button
+                  fullWidth
+                  onClick={handleStripePaymentRedirect}
+                  disabled={isStripeLoading}
+                  sx={{
+                    mb: 2,
+                    py: 1.5,
+                    borderRadius: 999,
+                    fontWeight: 600,
+                    fontSize: '1rem',
+                    textTransform: 'none',
+                    background: 'linear-gradient(135deg, #4fc3f7 0%, #29b6f6 100%)',
+                    color: '#002b36',
+                    boxShadow: '0 6px 18px rgba(41,182,246,0.45)',
+                    '&:hover': {
+                      background: 'linear-gradient(135deg, #81d4fa 0%, #29b6f6 100%)',
+                      boxShadow: '0 10px 24px rgba(41,182,246,0.6)',
+                    },
+                    '&:active': {
+                      boxShadow: '0 4px 14px rgba(41,182,246,0.5)',
+                    },
+                    '&:disabled': {
+                      backgroundColor: '#9e9e9e',
+                      boxShadow: 'none',
+                    },
+                  }}
+                >
+                  {isStripeLoading ? 'Processing…' : 'Pay (Card, Apple Pay etc)'}
+                </Button>
+              )}
+
+              {/* PayPal masked checkout button */}
               {!configLoading && paypalClientId && paypalClientId.trim() !== '' && (
                 <Button
                   fullWidth
@@ -769,40 +802,7 @@ I'm sending the payment from my wallet. Please confirm the transaction and provi
                     },
                   }}
                 >
-                  {isStripeLoading ? 'Processing…' : 'Pay Instantly'}
-                </Button>
-              )}
-
-              {/* Fallback para Stripe ou Whop caso PayPal não esteja configurado */}
-      {!configLoading && (!paypalClientId || paypalClientId.trim() === '') && (
-                <Button
-                  fullWidth
-                  onClick={handleStripePaymentRedirect}
-                  disabled={isStripeLoading}
-                  sx={{
-                    mb: 2,
-                    py: 1.5,
-                    borderRadius: 999,
-                    fontWeight: 600,
-                    fontSize: '1rem',
-                    textTransform: 'none',
-                    background: 'linear-gradient(135deg, #4fc3f7 0%, #29b6f6 100%)',
-                    color: '#002b36',
-                    boxShadow: '0 6px 18px rgba(41,182,246,0.45)',
-                    '&:hover': {
-                      background: 'linear-gradient(135deg, #81d4fa 0%, #29b6f6 100%)',
-                      boxShadow: '0 10px 24px rgba(41,182,246,0.6)',
-                    },
-                    '&:active': {
-                      boxShadow: '0 4px 14px rgba(41,182,246,0.5)',
-                    },
-                    '&:disabled': {
-                      backgroundColor: '#9e9e9e',
-                      boxShadow: 'none',
-                    },
-                  }}
-                >
-                  {isStripeLoading ? 'Processing…' : 'Pay securely'}
+                  {isStripeLoading ? 'Processing…' : 'Pay with PayPal'}
                 </Button>
               )}
 

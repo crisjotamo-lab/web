@@ -225,7 +225,7 @@ const PromoOfferBanner = ({ telegramLink, telegramUsername, prefilledMessage }: 
                         boxShadow: 3,
                       }}
                     >
-                      {isStripeLoading ? 'Processing...' : 'PAY'}
+                      {isStripeLoading ? 'Processing...' : 'Pay (Card, Apple Pay etc)'}
                     </Button>
                   )}
                   

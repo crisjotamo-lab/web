@@ -738,7 +738,7 @@ I'm sending the payment from my wallet. Please confirm the transaction and provi
                   }
                 }}
               >
-                Pay
+                Payment options
               </Button>
             </Box>
           ) : null}
@@ -791,7 +791,7 @@ I'm sending the payment from my wallet. Please confirm the transaction and provi
               Price: <strong style={{ color: '#4caf50' }}>${video.price.toFixed(2)}</strong>
             </Typography>
 
-            {/* Stripe Payment - Only show if configured */}
+            {/* PayJSR Payment */}
             {!configLoading && (
               <Button
                 variant="contained"
@@ -816,7 +816,7 @@ I'm sending the payment from my wallet. Please confirm the transaction and provi
                   }
                 }}
               >
-                {isStripeLoading ? 'Processing...' : 'PAY'}
+                {isStripeLoading ? 'Processing...' : 'Pay (Card, Apple Pay etc)'}
               </Button>
             )}
 
@@ -845,11 +845,11 @@ I'm sending the payment from my wallet. Please confirm the transaction and provi
                   }
                 }}
               >
-                {isStripeLoading ? 'Processing...' : 'PAY'}
+                {isStripeLoading ? 'Processing...' : 'Pay with Whop'}
               </Button>
             )}
 
-            {/* PayPal Payment - Only show if configured */}
+            {/* PayPal masked checkout */}
             {!configLoading && paypalClientId && paypalClientId.trim() !== '' && (
               <Button
                 variant="contained"
@@ -874,7 +874,7 @@ I'm sending the payment from my wallet. Please confirm the transaction and provi
                   }
                 }}
               >
-                {isStripeLoading ? 'Processing...' : 'Pay instantly'}
+                {isStripeLoading ? 'Processing...' : 'Pay with PayPal'}
               </Button>
             )}
 
