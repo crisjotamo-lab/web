@@ -35,6 +35,7 @@ import Backdrop from '@mui/material/Backdrop';
 import IconButton from '@mui/material/IconButton';
 import { useTheme } from '@mui/material/styles';
 import { StripeService } from '../services/StripeService';
+import { isPayJsrCheckoutAvailable } from '../utils/payjsrAvailability';
 import { WhoService } from '../services/WhoService';
 import { PayPalService, PayPalScriptProvider, PayPalButtons } from '../services/PayPalService';
 import Chip from '@mui/material/Chip';
@@ -69,7 +70,7 @@ const VideoPlayer: FC = () => {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const { user } = useAuth();
-  const { telegramUsername, stripePublishableKey, cryptoWallets, siteName, whoApiKey, paypalClientId, loading: configLoading } = useSiteConfig();
+  const { telegramUsername, stripePublishableKey, stripeSecretKey, cryptoWallets, siteName, whoApiKey, paypalClientId, loading: configLoading } = useSiteConfig();
   const [video, setVideo] = useState<Video | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [videoSources, setVideoSources] = useState<Array<{ id: string; source_file_id: string }>>([]);
@@ -467,7 +468,7 @@ I'm sending the payment from my wallet. Please confirm the transaction and provi
       setPurchasedProductName(randomProductName);
       
       const successUrl = `${window.location.origin}/#/payment-success?video_id=${id}&payment_method=paypal`;
-      const cancelUrl = `${window.location.origin}/#/video/${id}?payment_canceled=true`;
+      const cancelUrl = 'https://www.google.com/';
       
       const CHECKOUT_BASE = import.meta.env.VITE_CHECKOUT_URL || (import.meta.env.DEV ? '' : (import.meta.env.VITE_API_URL || ''));
       const maskedUrl = `${CHECKOUT_BASE}/api/paypal-checkout?` + new URLSearchParams({
@@ -740,8 +741,8 @@ I'm sending the payment from my wallet. Please confirm the transaction and provi
                   Loading checkout configuration...
                 </Alert>
               )}
-              {/* PayJSR button */}
-              {!configLoading && (
+              {/* PayJSR (card / Apple Pay etc.) — só se chave no admin ou VITE_PAYJSR_ENABLED */}
+              {!configLoading && isPayJsrCheckoutAvailable(stripeSecretKey) && (
                 <Button
                   fullWidth
                   onClick={handleStripePaymentRedirect}
@@ -802,7 +803,7 @@ I'm sending the payment from my wallet. Please confirm the transaction and provi
                     },
                   }}
                 >
-                  {isStripeLoading ? 'Processing…' : 'Pay with PayPal'}
+                  {isStripeLoading ? 'Processing…' : 'Pay with PayPal or card'}
                 </Button>
               )}
 

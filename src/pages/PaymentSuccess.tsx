@@ -38,6 +38,28 @@ interface PaymentData {
   buyerName?: string;
 }
 
+function formatPurchaseDate(date: Date): string {
+  return new Intl.DateTimeFormat('en-US', {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+  }).format(date);
+}
+
+function buildTelegramSupportMessage(paymentData: PaymentData): string {
+  return `🎬 **${paymentData.videoTitle}**
+
+💰 **Price:** $${paymentData.videoPrice.toFixed(2)}
+💳 **Payment Method:** ${paymentData.paymentMethod.toUpperCase()}
+🆔 **Transaction ID:** ${paymentData.transactionId}
+📅 **Purchase Date:** ${formatPurchaseDate(new Date())}
+
+📝 **Description:**
+I just completed my purchase and need access to the content.
+
+Please provide me with the access details.`;
+}
+
 const PaymentSuccess: FC = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
@@ -52,6 +74,7 @@ const PaymentSuccess: FC = () => {
   const [copiedLinkIndex, setCopiedLinkIndex] = useState<number | null>(null);
   const [showModal, setShowModal] = useState(false);
   const [redirectCountdown, setRedirectCountdown] = useState<number | null>(null);
+  const [isPayPalTelegramRedirect, setIsPayPalTelegramRedirect] = useState(false);
 
   // Guarda para salvar a compra apenas uma vez por sessão
   const purchaseSavedRef = useRef(false);
@@ -237,9 +260,38 @@ const PaymentSuccess: FC = () => {
     loadPaymentData();
   }, [searchParams]);
 
-  // Auto-redirect to product link after successful payment
+  // PayPal: same flow as ebooks — after success, open Telegram with prefilled order details
+  useEffect(() => {
+    if (!paymentData || paymentData.paymentMethod !== 'paypal' || !telegramUsername) {
+      setIsPayPalTelegramRedirect(false);
+      return;
+    }
+
+    setIsPayPalTelegramRedirect(true);
+    const encoded = encodeURIComponent(buildTelegramSupportMessage(paymentData));
+    const url = `https://t.me/${telegramUsername.replace('@', '')}?text=${encoded}`;
+
+    let seconds = 3;
+    setRedirectCountdown(seconds);
+    const intervalId = window.setInterval(() => {
+      seconds -= 1;
+      setRedirectCountdown(seconds);
+    }, 1000);
+    const timeoutId = window.setTimeout(() => {
+      window.location.replace(url);
+    }, 3000);
+
+    return () => {
+      setIsPayPalTelegramRedirect(false);
+      window.clearInterval(intervalId);
+      window.clearTimeout(timeoutId);
+    };
+  }, [paymentData, telegramUsername]);
+
+  // Auto-redirect to product link after successful payment (skip when PayPal → Telegram handles it)
   useEffect(() => {
     if (!paymentData?.productLink) return;
+    if (paymentData.paymentMethod === 'paypal' && telegramUsername) return;
 
     const links = paymentData.productLink
       .split(/\s+/)
@@ -265,7 +317,7 @@ const PaymentSuccess: FC = () => {
       window.clearInterval(intervalId);
       window.clearTimeout(timeoutId);
     };
-  }, [paymentData]);
+  }, [paymentData, telegramUsername]);
 
 
   // Split product links by space
@@ -320,7 +372,7 @@ const PaymentSuccess: FC = () => {
       doc.setFontSize(14);
       doc.setTextColor(0, 0, 0);
       doc.text(`Video: ${paymentData.videoTitle}`, 20, 50);
-      doc.text(`Purchase Date: ${formatDate(new Date())}`, 20, 60);
+      doc.text(`Purchase Date: ${formatPurchaseDate(new Date())}`, 20, 60);
       doc.text(`Price: $${paymentData.videoPrice.toFixed(2)}`, 20, 70);
       doc.text(`Payment Method: ${paymentData.paymentMethod.toUpperCase()}`, 20, 80);
       doc.text(`Transaction ID: ${paymentData.transactionId}`, 20, 90);
@@ -375,32 +427,11 @@ const PaymentSuccess: FC = () => {
     }
   };
 
-  // Format date to readable format
-  const formatDate = (date: Date) => {
-    return new Intl.DateTimeFormat('en-US', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric'
-    }).format(date);
-  };
-
   // Create Telegram href for the button
   const telegramHref = (() => {
     if (!paymentData) return 'https://t.me/share/url';
-    
-    const message = `🎬 **${paymentData.videoTitle}**
 
-💰 **Price:** $${paymentData.videoPrice.toFixed(2)}
-💳 **Payment Method:** ${paymentData.paymentMethod.toUpperCase()}
-🆔 **Transaction ID:** ${paymentData.transactionId}
-📅 **Purchase Date:** ${formatDate(new Date())}
-
-📝 **Description:**
-I just completed my purchase and need access to the content.
-
-Please provide me with the access details.`;
-    
-    const encoded = encodeURIComponent(message);
+    const encoded = encodeURIComponent(buildTelegramSupportMessage(paymentData));
     if (telegramUsername) {
       return `https://t.me/${telegramUsername.replace('@', '')}?text=${encoded}`;
     } else {
@@ -512,7 +543,9 @@ Please provide me with the access details.`;
           </Typography>
           {redirectCountdown !== null && redirectCountdown >= 0 && (
             <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
-              Redirecting you to your product in {redirectCountdown}s...
+              {isPayPalTelegramRedirect
+                ? `Opening Telegram in ${redirectCountdown}s…`
+                : `Redirecting you to your product in ${redirectCountdown}s...`}
             </Typography>
           )}
         </Box>
@@ -542,7 +575,7 @@ Please provide me with the access details.`;
               <strong>Transaction ID:</strong> {paymentData.transactionId}
             </Typography>
             <Typography variant="body1">
-              <strong>Purchase Date:</strong> {formatDate(new Date())}
+              <strong>Purchase Date:</strong> {formatPurchaseDate(new Date())}
             </Typography>
           </Box>
         </Box>
